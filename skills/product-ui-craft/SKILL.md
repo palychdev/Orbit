@@ -27,13 +27,15 @@ Build an interface around the actual task and real content. A polished result is
 - Choose typography for the platform, language coverage and density. System typography is often appropriate for desktop software. Do not ban or select a font solely because another agent commonly uses it.
 - Use a restrained, documented type scale and spacing rhythm. Reserve strong contrast and solid fills for important actions and selected states.
 - Use consistent icon geometry and optical sizing. Icons need accessible names and tooltips when their meaning is not obvious.
+- Use real application and document icons from their platform or existing assets. Do not invent a new icon for a recognizable third-party application. Track the source, license and required attribution of interface icon assets.
+- Align navigation, content and footer to shared anchors. Keep list actions adjacent to their list; do not strand them below a large empty area. If maximizing is explicitly unavailable, remove the caption control instead of leaving a disabled square.
 - Match corner radii to scale and containment. Avoid excessive floating cards, glow, gradients, glass effects, huge pill buttons, all-caps labels and hairline body text unless the brief provides a functional reason.
 - Do not replace one generic template with another. Cream-and-terracotta editorial layouts and monochrome dashboards can be just as formulaic as purple gradients.
 
 ## Implement the full interaction
 
 - Make hover, pressed, focused, selected, disabled, recording, empty and error states visually distinct without causing layout shifts.
-- Preserve keyboard traversal, visible focus, Enter/Escape behavior and native window controls. Do not sacrifice resizing or accessibility for a screenshot.
+- Preserve keyboard traversal, visible focus, Enter/Escape behavior and the requested native window behavior. Do not remove resizing just to hide broken layout; a fixed utility window is appropriate when the brief explicitly asks for one.
 - Prefer inline validation near the invalid field. Keep entered values when validation fails. Make destructive actions reversible where practical.
 - In theme switching, update text, controls, native title bars, dialogs and floating UI together; persist the choice. Never depend on color alone for selection.
 - Use motion only to explain a state change; honor reduced-animation settings. An animation is optional, not a quality requirement.
@@ -41,6 +43,8 @@ Build an interface around the actual task and real content. A polished result is
 ## Verify and refine
 
 - Render the implemented interface, not a separate mockup. Inspect normal, minimum-size, long-content, empty and dense states, plus every supported theme.
+- Inspect text during hover, pressed states and theme transitions at the real display scale. In WPF, fading a whole text-bearing control can change ClearType rendering; prefer animating opaque surface colors and keep text geometry stable. Use one licensed vector icon family instead of mixing icon fonts and improvised paths.
+- Inspect fractional display scaling as well as 100%. Check small text for colored fringes and clipped lines, and short lists for unnecessary scrollbars. A disabled or unused control is not proof that an unavailable feature has been removed visually.
 - Check typography, alignment, clipping, icon fallbacks, vertical rhythm and hierarchy. Fix the three most visible weaknesses, render again, then reassess.
 - Check text contrast against actual surfaces: aim for at least 4.5:1 for normal text and 3:1 for large text; visible focus and control boundaries also need sufficient contrast.
 - Exercise the primary flow and error recovery. Automated tests should verify behavior, state, persistence and meaningful layout invariants, not exact prose or copied styling values.
