@@ -36,7 +36,7 @@ public partial class MainWindow : Window
   Selection_Changed(null!,null!);
  }
  public void Report(string text) {Status.Text=text;Status.ToolTip=text;}
- private void Save() {try {app.Config.Save(); app.Input?.Configure(app.Config);Status.SetResourceReference(TextBlock.ForegroundProperty,"SecondaryBrush");Report("Сохранено");} catch(Exception ex) {Status.SetResourceReference(TextBlock.ForegroundProperty,"DangerBrush");Report("Не удалось сохранить: "+ex.Message);}}
+ private bool Save() {try {app.Config.Save(); app.Input?.Configure(app.Config);Status.SetResourceReference(TextBlock.ForegroundProperty,"SecondaryBrush");Report("Сохранено");return true;} catch(Exception ex) {Status.SetResourceReference(TextBlock.ForegroundProperty,"DangerBrush");Report("Не удалось сохранить: "+ex.Message);return false;}}
  private void Selection_Changed(object sender,SelectionChangedEventArgs e) {if(EditButton==null)return; int i=AppsList.SelectedIndex; EditButton.IsEnabled=RemoveButton.IsEnabled=i>=0; UpButton.IsEnabled=i>0; DownButton.IsEnabled=i>=0 && i<app.Config.Entries.Count-1;}
  private void Add_Click(object sender,RoutedEventArgs e)
  {
@@ -55,7 +55,7 @@ public partial class MainWindow : Window
   if(new EntryEditor(entry) {Owner=this}.ShowDialog()==true) {entry.LoadIcon(); int i=AppsList.SelectedIndex;Refresh(i);Save();}
  }
  private void RowEdit_Click(object sender,RoutedEventArgs e) {e.Handled=true;if(sender is Button {Tag:Entry entry}){AppsList.SelectedItem=entry;Edit_Click(sender,e);}}
- private void Remove_Click(object sender,RoutedEventArgs e) {int i=AppsList.SelectedIndex;if(i<0)return;removed=app.Config.Entries[i];removedIndex=i;app.Config.Entries.RemoveAt(i);Refresh(Math.Min(i,app.Config.Entries.Count-1));Save();Report("Удалено: "+removed.Name);UndoButton.Visibility=Visibility.Visible;}
+ private void Remove_Click(object sender,RoutedEventArgs e) {int i=AppsList.SelectedIndex;if(i<0)return;removed=app.Config.Entries[i];removedIndex=i;app.Config.Entries.RemoveAt(i);Refresh(Math.Min(i,app.Config.Entries.Count-1));if(Save())Report("Удалено: "+removed.Name);UndoButton.Visibility=Visibility.Visible;}
  private void Undo_Click(object sender,RoutedEventArgs e) {
   if(removed==null)return;
   if(app.Config.Entries.Count>=12){Report("Нет свободного места в колесе.");return;}

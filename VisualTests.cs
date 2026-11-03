@@ -21,6 +21,8 @@ internal static class VisualTests
     Check(Contrast(palette.Text,palette.Canvas)>=4.5,"main text contrast "+appearance);
     Check(Contrast(palette.Secondary,palette.Surface)>=4.5,"secondary text contrast "+appearance);
     Check(Contrast(palette.WheelSelectedText,palette.WheelSelected)>=4.5,"selected wheel contrast "+appearance);
+    Check(Contrast(palette.Accent,palette.Surface)>=3,"keyboard focus contrast "+appearance);
+    Check(Contrast(palette.Danger,palette.Canvas)>=4.5,"validation text contrast "+appearance);
     app.Config.Entries=Settings.Defaults().Entries;foreach(var iconEntry in app.Config.Entries)iconEntry.LoadIcon();
     var window=new MainWindow(app);
     Render((FrameworkElement)window.Content,840,610,$"ui-{appearance.ToLowerInvariant()}-apps.png");
@@ -53,6 +55,7 @@ internal static class VisualTests
    string json=System.Text.Json.JsonSerializer.Serialize(new Settings{Theme="Light"});
    Check(System.Text.Json.JsonSerializer.Deserialize<Settings>(json)!.Theme=="Light","appearance roundtrip");
    Check(new Settings().Theme=="Dark","dark default for existing settings");
+   Check(System.Text.Json.JsonSerializer.Deserialize<Settings>("{\"Key\":119}")!.Theme=="Dark","old settings without theme remain compatible");
   } finally {app.Config.Entries=original;app.Config.Theme=theme;ThemeManager.Apply(app,theme);}
   return checks;
  }

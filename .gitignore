@@ -10,6 +10,8 @@ Data/
 *.log
 self-test.txt
 native-test.txt
+native-registration.txt
+native-lifecycle.txt
 wheel-preview.png
 settings-preview.png
 ui-*.png
