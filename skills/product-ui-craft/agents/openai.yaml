@@ -1,0 +1,4 @@
+interface:
+  display_name: "Product UI Craft"
+  short_description: "Deliberate app and web UI with visual verification"
+  default_prompt: "Use $product-ui-craft to design and verify a focused, polished interface for this product."
