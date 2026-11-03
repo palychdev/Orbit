@@ -25,12 +25,13 @@ jobs:
         run: |
           $ErrorActionPreference = 'Stop'
           $exe = Join-Path $PWD 'bin\Release\net10.0-windows\Orbit.exe'
-          foreach ($mode in @('--self-test', '--native-registration-test')) {
+          foreach ($mode in @('--self-test', '--native-registration-test', '--hook-test')) {
             $process = Start-Process -FilePath $exe -ArgumentList $mode -Wait -PassThru -WindowStyle Hidden
             if ($process.ExitCode -ne 0) { throw "$mode failed: $($process.ExitCode)" }
           }
           Get-Content bin/Release/net10.0-windows/self-test.txt
           Get-Content bin/Release/net10.0-windows/native-test.txt
+          Get-Content bin/Release/net10.0-windows/hook-test.txt
           Copy-Item bin/Release/net10.0-windows/native-test.txt bin/Release/net10.0-windows/native-registration.txt
       - name: Native wheel lifecycle without foreground activation
         shell: pwsh
@@ -51,6 +52,7 @@ jobs:
             bin/Release/net10.0-windows/native-test.txt
             bin/Release/net10.0-windows/native-lifecycle.txt
             bin/Release/net10.0-windows/native-registration.txt
+            bin/Release/net10.0-windows/hook-test.txt
             bin/Release/net10.0-windows/*-preview.png
             bin/Release/net10.0-windows/ui-*.png
             bin/Release/net10.0-windows/wheel-dark*.png

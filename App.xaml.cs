@@ -22,13 +22,17 @@ public partial class App : Application
   ThemeManager.Apply(this,"Dark");
   void Log(string message) {try {File.AppendAllText(System.IO.Path.Combine(AppContext.BaseDirectory,"startup.log"),DateTime.Now+" "+message+Environment.NewLine);}catch{}}
   Log("Starting " + string.Join(" ",e.Args));
+  if(e.Args.Contains("--hook-test")){try{PolishTests.NativeHooks();Shutdown(0);}catch(Exception ex){File.WriteAllText(System.IO.Path.Combine(AppContext.BaseDirectory,"hook-test.txt"),ex.ToString());Shutdown(1);}return;}
+  if(e.Args.Length==2&&e.Args[0]=="--export-icon"){try{IconExporter.Export(e.Args[1]);Shutdown(0);}catch(Exception ex){Log(ex.ToString());Shutdown(1);}return;}
   if(e.Args.Contains("--native-registration-test")) {try {NativeIntegrationTests.RegistrationOnly();Shutdown(0);}catch(Exception ex){File.WriteAllText(System.IO.Path.Combine(AppContext.BaseDirectory,"native-test.txt"),ex.ToString());Shutdown(1);}return;}
   if(e.Args.Contains("--native-test")) {try {Config=Settings.Defaults();NativeIntegrationTests.Run();Shutdown(0);}catch(Exception ex){File.WriteAllText(System.IO.Path.Combine(AppContext.BaseDirectory,"native-test.txt"),ex.ToString());Shutdown(1);}return;}
   if(e.Args.Contains("--self-test")) {try {Config=Settings.Defaults();SelfTest.Run();Shutdown(0);}catch(Exception ex){File.WriteAllText(System.IO.Path.Combine(AppContext.BaseDirectory,"self-test.txt"),ex.ToString());Shutdown(1);}return;}
-  mutex=new Mutex(true,@"Local\Orbit.RadialLauncher",out bool created);
+  bool profile=e.Args.Contains("--profile-keyboard")||e.Args.Contains("--profile-mouse");
+  mutex=new Mutex(true,@"Local\Orbit.RadialLauncher"+(profile?".Profile":""),out bool created);
   if(!created) {Log("Already running");MessageBox.Show("Orbit уже работает. Открой настройки через значок в трее.","Orbit");Shutdown();return;}
   try {
    try {Config=Settings.Load();} catch(Exception ex) {Config=Settings.Defaults();MessageBox.Show("Не удалось прочитать настройки. Загружены стандартные.\n"+ex.Message,"Orbit");}
+   if(profile){Config.Key=e.Args.Contains("--profile-mouse")?5:0x77;Config.Modifiers=0;}
    ThemeManager.Apply(this,Config.Theme);
    foreach(var entry in Config.Entries)entry.LoadIcon();
    Log("Installing hotkey");Input=new InputService(Dispatcher);Input.Configure(Config);Log("Creating settings");
@@ -40,7 +44,7 @@ public partial class App : Application
    using(var icon=new System.Drawing.Icon(stream))trayIcon=(System.Drawing.Icon)icon.Clone();
    tray=new Forms.NotifyIcon {Icon=trayIcon,Text="Orbit · "+Config.BindName,Visible=true};
    var menu=new Forms.ContextMenuStrip();menu.Items.Add("Настройки",null,(_,_)=>ShowSettings());menu.Items.Add("Выход",null,(_,_)=>ExitApp());tray.ContextMenuStrip=menu;tray.DoubleClick+=(_,_)=>ShowSettings();
-   if(!e.Args.Contains("--tray"))settingsWindow.Show();Log("Ready");
+   if(!e.Args.Contains("--tray")&&!profile)settingsWindow.Show();if(profile){tray.Visible=false;IdleProfiler.Start(this,e.Args.Contains("--profile-mouse"));}Log("Ready");
   } catch(Exception ex) {Log(ex.ToString());MessageBox.Show(ex.Message,"Orbit: ошибка запуска");Shutdown(1);}
   DispatcherUnhandledException+=(_,args)=>{wheel?.Finish(true);Notify("Ошибка Orbit",args.Exception.Message);args.Handled=true;};
   SessionEnding+=(_,_)=>wheel?.Finish(true);

@@ -1,0 +1,1 @@
+UIcons by Flaticon, Freepik Company. Official @flaticon/flaticon-uicons 3.3.1 (solid rounded). https://github.com/freepik-company/flaticon-uicons . Glyph outlines converted to vector paths without redrawing; see LICENSE. Attribution is available in Orbit About and README.
