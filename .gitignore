@@ -1,0 +1,26 @@
+# Build output and local runtime
+bin/
+obj/
+runtime/
+publish/
+artifacts/
+
+# Local application settings and diagnostics
+Data/
+*.log
+self-test.txt
+wheel-preview.png
+settings-preview.png
+
+# Archives belong in GitHub Releases
+*.zip
+*.7z
+
+# IDE and machine-specific files
+.vs/
+.idea/
+*.user
+*.suo
+.env
+.env.*
+!.env.example

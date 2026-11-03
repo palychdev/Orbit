@@ -1,0 +1,14 @@
+<Application x:Class="Orbit.App" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" ShutdownMode="OnExplicitShutdown">
+ <Application.Resources>
+  <SolidColorBrush x:Key="Panel" Color="#171D29"/>
+  <Style TargetType="Window"><Setter Property="FontFamily" Value="Segoe UI"/><Setter Property="Background" Value="#0E131D"/><Setter Property="Foreground" Value="#EDF2FA"/></Style>
+  <Style TargetType="TextBlock"><Setter Property="TextWrapping" Value="Wrap"/></Style>
+  <Style TargetType="Button">
+   <Setter Property="Foreground" Value="#EDF2FA"/><Setter Property="Background" Value="#283346"/><Setter Property="BorderThickness" Value="0"/><Setter Property="Padding" Value="16,10"/><Setter Property="Margin" Value="0,0,8,0"/><Setter Property="Cursor" Value="Hand"/>
+   <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="Button"><Border x:Name="Bg" Background="{TemplateBinding Background}" CornerRadius="8" Padding="{TemplateBinding Padding}"><ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/></Border><ControlTemplate.Triggers><Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Bg" Property="Background" Value="#40516C"/></Trigger><Trigger Property="IsEnabled" Value="False"><Setter TargetName="Bg" Property="Opacity" Value="0.4"/></Trigger></ControlTemplate.Triggers></ControlTemplate></Setter.Value></Setter>
+  </Style>
+  <Style TargetType="TextBox"><Setter Property="Background" Value="#222C3D"/><Setter Property="Foreground" Value="#EDF2FA"/><Setter Property="CaretBrush" Value="White"/><Setter Property="BorderBrush" Value="#3B4961"/><Setter Property="Padding" Value="9"/></Style>
+  <Style TargetType="ListBox"><Setter Property="Background" Value="#171D29"/><Setter Property="Foreground" Value="#EDF2FA"/><Setter Property="BorderThickness" Value="0"/><Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled"/></Style>
+  <Style TargetType="ListBoxItem"><Setter Property="HorizontalContentAlignment" Value="Stretch"/><Setter Property="Padding" Value="10"/><Setter Property="Margin" Value="0,2"/><Setter Property="Template"><Setter.Value><ControlTemplate TargetType="ListBoxItem"><Border x:Name="Row" Background="Transparent" CornerRadius="8" Padding="{TemplateBinding Padding}"><ContentPresenter/></Border><ControlTemplate.Triggers><Trigger Property="IsSelected" Value="True"><Setter TargetName="Row" Property="Background" Value="#30475B"/></Trigger><Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Row" Property="BorderBrush" Value="#6AD9C5"/><Setter TargetName="Row" Property="BorderThickness" Value="1"/></Trigger></ControlTemplate.Triggers></ControlTemplate></Setter.Value></Setter></Style>
+ </Application.Resources>
+</Application>
