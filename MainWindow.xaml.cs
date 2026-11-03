@@ -56,6 +56,7 @@ public partial class MainWindow : Window
   int vk=KeyInterop.VirtualKeyFromKey(key); if(InputService.IsModifier(vk))return;
   if(key==Key.Escape) {StopRecording();return;}
   int mods=InputService.CurrentModifiers();
+  if((mods&8)!=0) {BindHint.Text="Используй сочетание без клавиши Windows.";return;}
   if(key is Key.Tab or Key.Return or Key.Back || (mods==1 && key==Key.F4) || ((mods&3)==3 && key==Key.Delete)) {BindHint.Text="Выбери другую клавишу, например F8 или Ctrl + Space.";return;}
   app.Config.Key=vk;app.Config.Modifiers=mods;StopRecording();Save();
  }

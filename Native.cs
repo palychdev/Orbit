@@ -10,7 +10,7 @@ internal static class Native
  [StructLayout(LayoutKind.Sequential)] internal struct MonitorInfo { public int Size; public Rect Monitor,Work; public uint Flags; }
  [StructLayout(LayoutKind.Sequential)] internal struct RawDevice { public ushort UsagePage,Usage; public uint Flags; public IntPtr Target; }
  [StructLayout(LayoutKind.Sequential)] internal struct RawHeader { public uint Type,Size; public IntPtr Device,WParam; }
- [StructLayout(LayoutKind.Explicit)] internal struct RawMouse { [FieldOffset(0)] public ushort Flags; [FieldOffset(4)] public uint Buttons; [FieldOffset(12)] public int X; [FieldOffset(16)] public int Y; }
+ [StructLayout(LayoutKind.Explicit,Size=24)] internal struct RawMouse { [FieldOffset(0)] public ushort Flags; [FieldOffset(4)] public uint Buttons; [FieldOffset(12)] public int X; [FieldOffset(16)] public int Y; }
  internal delegate IntPtr HookProc(int code,IntPtr w,IntPtr l);
  internal delegate bool EnumProc(IntPtr window,IntPtr l);
  [DllImport("user32.dll")] internal static extern bool GetCursorPos(out Point p);
@@ -22,6 +22,9 @@ internal static class Native
  [DllImport("user32.dll", CharSet=CharSet.Auto)] internal static extern bool GetMonitorInfo(IntPtr monitor,ref MonitorInfo info);
  [DllImport("user32.dll")] internal static extern bool SetWindowPos(IntPtr h,IntPtr after,int x,int y,int w,int height,uint flags);
  [DllImport("user32.dll",SetLastError=true)] internal static extern bool RegisterRawInputDevices(RawDevice[] devices,uint count,uint size);
+ [DllImport("user32.dll",SetLastError=true)] internal static extern uint GetRegisteredRawInputDevices([Out] RawDevice[]? devices,ref uint count,uint size);
+ [DllImport("user32.dll")] internal static extern IntPtr GetForegroundWindow();
+ [DllImport("user32.dll")] internal static extern bool GetWindowRect(IntPtr window,out Rect rect);
  [DllImport("user32.dll")] internal static extern uint GetRawInputData(IntPtr input,uint command,IntPtr data,ref uint size,uint headerSize);
  [DllImport("user32.dll",SetLastError=true)] internal static extern IntPtr SetWindowsHookEx(int id,HookProc proc,IntPtr module,uint thread);
  [DllImport("user32.dll")] internal static extern bool UnhookWindowsHookEx(IntPtr hook);

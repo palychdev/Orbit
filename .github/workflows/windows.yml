@@ -1,0 +1,42 @@
+name: Windows build and regression checks
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73 # v6.1.0
+        with:
+          dotnet-version: 10.0.x
+      - name: Build
+        run: dotnet build Orbit.csproj -c Release -p:AppHostDotNetSearch=Global
+      - name: Regression and Windows API checks
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $exe = Join-Path $PWD 'bin\Release\net10.0-windows\Orbit.exe'
+          foreach ($mode in @('--self-test', '--native-registration-test')) {
+            $process = Start-Process -FilePath $exe -ArgumentList $mode -Wait -PassThru -WindowStyle Hidden
+            if ($process.ExitCode -ne 0) { throw "$mode failed: $($process.ExitCode)" }
+          }
+          Get-Content bin/Release/net10.0-windows/self-test.txt
+          Get-Content bin/Release/net10.0-windows/native-test.txt
+      - name: Test reports
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: test-reports
+          path: |
+            bin/Release/net10.0-windows/self-test.txt
+            bin/Release/net10.0-windows/native-test.txt
+            bin/Release/net10.0-windows/*-preview.png

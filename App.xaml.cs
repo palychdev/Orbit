@@ -20,6 +20,8 @@ public partial class App : Application
   base.OnStartup(e);
   void Log(string message) {try {File.AppendAllText(System.IO.Path.Combine(AppContext.BaseDirectory,"startup.log"),DateTime.Now+" "+message+Environment.NewLine);}catch{}}
   Log("Starting " + string.Join(" ",e.Args));
+  if(e.Args.Contains("--native-registration-test")) {try {NativeIntegrationTests.RegistrationOnly();Shutdown(0);}catch(Exception ex){File.WriteAllText(System.IO.Path.Combine(AppContext.BaseDirectory,"native-test.txt"),ex.ToString());Shutdown(1);}return;}
+  if(e.Args.Contains("--native-test")) {try {Config=Settings.Defaults();NativeIntegrationTests.Run();Shutdown(0);}catch(Exception ex){File.WriteAllText(System.IO.Path.Combine(AppContext.BaseDirectory,"native-test.txt"),ex.ToString());Shutdown(1);}return;}
   if(e.Args.Contains("--self-test")) {try {Config=Settings.Defaults();SelfTest.Run();Shutdown(0);}catch(Exception ex){File.WriteAllText(System.IO.Path.Combine(AppContext.BaseDirectory,"self-test.txt"),ex.ToString());Shutdown(1);}return;}
   mutex=new Mutex(true,@"Local\Orbit.RadialLauncher",out bool created);
   if(!created) {Log("Already running");MessageBox.Show("Orbit уже работает. Открой настройки через значок в трее.","Orbit");Shutdown();return;}

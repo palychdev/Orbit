@@ -27,6 +27,7 @@ internal static class SelfTest
   var content=(FrameworkElement)window.Content;content.Measure(new Size(940,700));content.Arrange(new Rect(0,0,940,700));content.UpdateLayout();
   var ui=new RenderTargetBitmap(940,700,96,96,PixelFormats.Pbgra32);ui.Render(content);
   var uiPng=new PngBitmapEncoder();uiPng.Frames.Add(BitmapFrame.Create(ui));using(var output=File.Create(System.IO.Path.Combine(AppContext.BaseDirectory,"settings-preview.png")))uiPng.Save(output);
-  File.WriteAllText(System.IO.Path.Combine(AppContext.BaseDirectory,"self-test.txt"),$"PASS: {checks} checks. Sector directions 1–12, dead zone, settings roundtrip, WPF render.");
+  checks+=RegressionTests.Run();
+  File.WriteAllText(System.IO.Path.Combine(AppContext.BaseDirectory,"self-test.txt"),$"PASS: {checks} checks. Sector directions, raw packet decoding, background-input configuration, hotkey sequences, repeated open/close, failure cleanup and recovery, settings roundtrip, WPF render.\nReal Start menu, F11 and game scenarios require interactive verification.");
  }
 }

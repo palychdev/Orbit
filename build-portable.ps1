@@ -16,4 +16,5 @@ Copy-Item -LiteralPath $desktop.FullName -Destination (Join-Path $runtime 'share
 Copy-Item -LiteralPath $fxr.FullName -Destination (Join-Path $runtime 'host\fxr') -Recurse -Force
 foreach ($name in @('LICENSE.txt','ThirdPartyNotices.txt')) { $license=Join-Path $dotnetPath $name; if(Test-Path -LiteralPath $license) {Copy-Item -LiteralPath $license -Destination $runtime -Force} }
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'README.md') -Destination $Destination -Force
+Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'docs') -Destination $Destination -Recurse -Force
 Write-Output "Portable app: $Destination"

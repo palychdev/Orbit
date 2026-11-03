@@ -9,6 +9,7 @@ artifacts/
 Data/
 *.log
 self-test.txt
+native-test.txt
 wheel-preview.png
 settings-preview.png
 
