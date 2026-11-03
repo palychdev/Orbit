@@ -8,6 +8,8 @@
     <Nullable>enable</Nullable>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <AssemblyName>Orbit</AssemblyName>
-    <Version>0.1.1</Version>
+    <ApplicationIcon>Assets/orbit.ico</ApplicationIcon>
+    <Version>0.2.0</Version>
   </PropertyGroup>
+  <ItemGroup><Resource Include="Assets/orbit.ico" /></ItemGroup>
 </Project>

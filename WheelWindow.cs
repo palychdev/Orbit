@@ -128,8 +128,9 @@ internal sealed class WheelVisual : FrameworkElement
  private readonly Settings settings;
  public int Selected {get;set;}=-1;
  public bool Preview {get;set;}
+ private ThemePalette? palette;
+ private string? paletteTheme;
  public WheelVisual(Settings settings) {this.settings=settings;}
- private static Brush Brush(string value) => (Brush)new BrushConverter().ConvertFromString(value)!;
  private void Text(DrawingContext dc,string text,Point center,double size,Brush brush,double maxWidth=260)
  {
   var ft=new FormattedText(text,CultureInfo.CurrentCulture,FlowDirection.LeftToRight,new Typeface("Segoe UI"),size,brush,VisualTreeHelper.GetDpi(this).PixelsPerDip) {MaxTextWidth=maxWidth,TextAlignment=TextAlignment.Center,Trimming=TextTrimming.CharacterEllipsis,MaxLineCount=2};
@@ -137,31 +138,39 @@ internal sealed class WheelVisual : FrameworkElement
  }
  protected override void OnRender(DrawingContext dc)
  {
+  if(palette==null||paletteTheme!=settings.Theme){palette=ThemePalette.For(settings.Theme);paletteTheme=settings.Theme;}
+  var p=palette;
   var center=new Point(ActualWidth/2,ActualHeight/2);
-  double radius=Math.Min(settings.Size/2,Math.Min(ActualWidth,ActualHeight)*0.43), inner=radius*0.45;
-  dc.DrawRectangle(Brush("#42060A13"),null,new Rect(0,0,ActualWidth,ActualHeight));
+  double radius=Math.Min(settings.Size/2,Math.Min(ActualWidth,ActualHeight)*0.43), inner=radius*0.48;
+  dc.DrawRectangle(p.Backdrop,null,new Rect(0,0,ActualWidth,ActualHeight));
   dc.PushOpacity(settings.Opacity);
   int n=settings.Entries.Count;
   for(int i=0;i<n;i++) {
    double angle=i*360.0/n-90, half=180.0/n;
-   var geometry=Sector(center,inner,radius,angle-half+1.1,angle+half-1.1);
+   var geometry=Sector(center,inner,radius,angle-half+0.8,angle+half-0.8);
    bool selected=i==Selected;
-   dc.DrawGeometry(selected?Brush("#35B7A0"):Brush("#E51A2434"),new Pen(selected?Brush("#9FF5DE"):Brush("#3C5068"),selected?2:1),geometry);
-   double rad=angle*Math.PI/180; var p=new Point(center.X+Math.Cos(rad)*radius*0.72,center.Y+Math.Sin(rad)*radius*0.72);
+   dc.DrawGeometry(selected?p.WheelSelected:p.Wheel,new Pen(selected?p.Text:p.Stroke,selected?1.5:0.8),geometry);
+   double rad=angle*Math.PI/180; var position=new Point(center.X+Math.Cos(rad)*radius*0.74,center.Y+Math.Sin(rad)*radius*0.74);
    var entry=settings.Entries[i];
-   if(entry.Icon!=null) dc.DrawImage(entry.Icon,new Rect(p.X-20,p.Y-28,40,40));
-   else Text(dc,entry.Name.Length>0?entry.Name[..1]:"?",new Point(p.X,p.Y-32),30,Brushes.White,80);
-   Text(dc,entry.Name,new Point(p.X,p.Y+18),12,Brushes.White,Math.Max(65,Math.Min(140,2*Math.PI*radius*.72/n-8)));
+   double iconSize=n>=9?28:34;double iconTop=n>=9?-iconSize/2:-26;
+   if(entry.Icon!=null)dc.DrawImage(entry.Icon,new Rect(position.X-iconSize/2,position.Y+iconTop,iconSize,iconSize));
+   else {
+    dc.DrawRoundedRectangle(selected?p.Wheel:p.Elevated,null,new Rect(position.X-iconSize/2,position.Y+iconTop,iconSize,iconSize),7,7);
+    Text(dc,entry.Name.Length>0?entry.Name[..1].ToUpperInvariant():"?",new Point(position.X,position.Y+iconTop+5),17,p.Text,iconSize);
+   }
+   if(n<9)Text(dc,entry.Name,new Point(position.X,position.Y+16),12,selected?p.WheelSelectedText:p.Text,Math.Max(60,Math.Min(125,2*Math.PI*radius*.74/n-12)));
   }
-  dc.DrawEllipse(Brush("#F0101826"),new Pen(Brush("#40536A"),1),center,inner-5,inner-5);
-  Text(dc,Selected<0?"ORBIT":settings.Entries[Selected].Name,new Point(center.X,center.Y-22),Selected<0?20:16,Brushes.White,inner*1.75);
-  Text(dc,Selected<0?"Двинь мышь": "Отпусти бинд",new Point(center.X,center.Y+12),11,Brush("#A6B8CD"),inner*1.8);
-  if(Selected>=0) {
+  dc.DrawEllipse(p.Surface,new Pen(p.Stroke,0.8),center,inner-5,inner-5);
+  bool hasSelection=Selected>=0&&Selected<settings.Entries.Count;
+  Text(dc,hasSelection?settings.Entries[Selected].Name:settings.BindName,new Point(center.X,center.Y-22),hasSelection?16:23,p.Text,inner*1.65);
+  Text(dc,hasSelection?"Отпусти": "Удерживай",new Point(center.X,center.Y+16),12,p.Secondary,inner*1.7);
+  if(hasSelection) {
    double rad=(Selected*360.0/n-90)*Math.PI/180;
-   dc.DrawEllipse(Brush("#8BF5D9"),null,new Point(center.X+Math.Cos(rad)*(inner-17),center.Y+Math.Sin(rad)*(inner-17)),4,4);
+   dc.DrawEllipse(p.Text,null,new Point(center.X+Math.Cos(rad)*(inner-17),center.Y+Math.Sin(rad)*(inner-17)),2.5,2.5);
   }
   dc.Pop();
-  Text(dc,Preview?"ПРЕДПРОСМОТР · 5 СЕКУНД · ESC — ЗАКРЫТЬ":settings.BindName+"  ·  ESC — ОТМЕНА",new Point(center.X,center.Y+radius+24),12,Brush("#D2DEEF"),500);
+  var hint=new Rect(center.X-53,center.Y+radius+20,106,29);dc.DrawRoundedRectangle(p.Surface,new Pen(p.Stroke,0.7),hint,8,8);
+  Text(dc,"Esc   Отмена",new Point(center.X,hint.Y+6),11,p.Secondary,100);
  }
  internal static StreamGeometry Sector(Point c,double inner,double outer,double start,double end)
  {

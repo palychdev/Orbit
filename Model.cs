@@ -16,6 +16,8 @@ public sealed class Entry
  public string Arguments { get; set; } = "";
  public string WorkingDirectory { get; set; } = "";
  [JsonIgnore] public ImageSource? Icon { get; set; }
+ [JsonIgnore] public string Slot { get; set; } = "";
+ [JsonIgnore] public string FileName => System.IO.Path.GetFileName(Path);
  public void LoadIcon()
  {
   try { using var icon = System.Drawing.Icon.ExtractAssociatedIcon(Path); if(icon != null) { var image=Imaging.CreateBitmapSourceFromHIcon(icon.Handle,Int32Rect.Empty,BitmapSizeOptions.FromWidthAndHeight(48,48)); image.Freeze(); Icon=image; } } catch { }
@@ -28,6 +30,7 @@ public sealed class Settings
  public double Size { get; set; } = 440;
  public double Sensitivity { get; set; } = 1;
  public double Opacity { get; set; } = 0.94;
+ public string Theme { get; set; } = "Dark";
  public List<Entry> Entries { get; set; } = new();
  [JsonIgnore] public string BindName => BindingName(Key, Modifiers);
  public static string BindingName(int key,int mods) => ((mods&2)!=0?"Ctrl + ":"")+((mods&1)!=0?"Alt + ":"")+((mods&4)!=0?"Shift + ":"")+System.Windows.Input.KeyInterop.KeyFromVirtualKey(key);
@@ -39,6 +42,7 @@ public sealed class Settings
   s.Size=Math.Clamp(s.Size,300,640); s.Sensitivity=Math.Clamp(s.Sensitivity,0.4,2.5); s.Opacity=Math.Clamp(s.Opacity,0.5,1);
   if(s.Key<8 || s.Key>254 || InputService.IsModifier(s.Key)) {s.Key=0x77; s.Modifiers=0;}
   s.Modifiers &=7; s.Entries ??= new(); s.Entries.RemoveAll(e=>e==null || string.IsNullOrWhiteSpace(e.Path));
+  if(s.Theme!="Light")s.Theme="Dark";
   if(s.Entries.Count>12) s.Entries.RemoveRange(12,s.Entries.Count-12);
   return s;
  }
