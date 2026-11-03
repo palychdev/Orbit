@@ -12,6 +12,9 @@ self-test.txt
 native-test.txt
 wheel-preview.png
 settings-preview.png
+ui-*.png
+wheel-dark*.png
+wheel-light*.png
 
 # Archives belong in GitHub Releases
 *.zip

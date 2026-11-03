@@ -22,11 +22,7 @@ internal static class SelfTest
   var visual=new WheelVisual(config) {Selected=1};visual.Measure(new Size(900,700));visual.Arrange(new Rect(0,0,900,700));visual.UpdateLayout();
   var bitmap=new RenderTargetBitmap(900,700,96,96,PixelFormats.Pbgra32);bitmap.Render(visual);
   var png=new PngBitmapEncoder();png.Frames.Add(BitmapFrame.Create(bitmap));using(var output=File.Create(System.IO.Path.Combine(AppContext.BaseDirectory,"wheel-preview.png")))png.Save(output);
-  var window=new MainWindow((App)Application.Current);
-  Check(window.Background is SolidColorBrush brush && brush.Color==Color.FromRgb(14,19,29),"settings dark theme");
-  var content=(FrameworkElement)window.Content;content.Measure(new Size(940,700));content.Arrange(new Rect(0,0,940,700));content.UpdateLayout();
-  var ui=new RenderTargetBitmap(940,700,96,96,PixelFormats.Pbgra32);ui.Render(content);
-  var uiPng=new PngBitmapEncoder();uiPng.Frames.Add(BitmapFrame.Create(ui));using(var output=File.Create(System.IO.Path.Combine(AppContext.BaseDirectory,"settings-preview.png")))uiPng.Save(output);
+  checks+=VisualTests.Run();
   checks+=RegressionTests.Run();
   File.WriteAllText(System.IO.Path.Combine(AppContext.BaseDirectory,"self-test.txt"),$"PASS: {checks} checks. Sector directions, raw packet decoding, background-input configuration, hotkey sequences, repeated open/close, failure cleanup and recovery, settings roundtrip, WPF render.\nReal Start menu, F11 and game scenarios require interactive verification.");
  }

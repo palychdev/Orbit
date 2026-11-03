@@ -14,10 +14,12 @@ public partial class App : Application
  private MainWindow? settingsWindow;
  private WheelWindow? wheel;
  private Forms.NotifyIcon? tray;
+ private System.Drawing.Icon? trayIcon;
  private Mutex? mutex;
  protected override void OnStartup(StartupEventArgs e)
  {
   base.OnStartup(e);
+  ThemeManager.Apply(this,"Dark");
   void Log(string message) {try {File.AppendAllText(System.IO.Path.Combine(AppContext.BaseDirectory,"startup.log"),DateTime.Now+" "+message+Environment.NewLine);}catch{}}
   Log("Starting " + string.Join(" ",e.Args));
   if(e.Args.Contains("--native-registration-test")) {try {NativeIntegrationTests.RegistrationOnly();Shutdown(0);}catch(Exception ex){File.WriteAllText(System.IO.Path.Combine(AppContext.BaseDirectory,"native-test.txt"),ex.ToString());Shutdown(1);}return;}
@@ -27,13 +29,16 @@ public partial class App : Application
   if(!created) {Log("Already running");MessageBox.Show("Orbit уже работает. Открой настройки через значок в трее.","Orbit");Shutdown();return;}
   try {
    try {Config=Settings.Load();} catch(Exception ex) {Config=Settings.Defaults();MessageBox.Show("Не удалось прочитать настройки. Загружены стандартные.\n"+ex.Message,"Orbit");}
+   ThemeManager.Apply(this,Config.Theme);
    foreach(var entry in Config.Entries)entry.LoadIcon();
    Log("Installing hotkey");Input=new InputService(Dispatcher);Input.Configure(Config);Log("Creating settings");
    settingsWindow=new MainWindow(this);MainWindow=settingsWindow;
    wheel=new WheelWindow(Config);
    Input.Pressed+=()=>BeginWheel();Input.Released+=cancel=>wheel.Finish(cancel);
    wheel.Chosen+=entry=>{try {settingsWindow.Report(Launcher.Open(entry));}catch(Exception ex){Notify("Не удалось открыть "+entry.Name,ex.Message);}};
-   tray=new Forms.NotifyIcon {Icon=System.Drawing.SystemIcons.Application,Text="Orbit · "+Config.BindName,Visible=true};
+   using(var stream=GetResourceStream(new Uri("pack://application:,,,/Assets/orbit.ico")).Stream)
+   using(var icon=new System.Drawing.Icon(stream))trayIcon=(System.Drawing.Icon)icon.Clone();
+   tray=new Forms.NotifyIcon {Icon=trayIcon,Text="Orbit · "+Config.BindName,Visible=true};
    var menu=new Forms.ContextMenuStrip();menu.Items.Add("Настройки",null,(_,_)=>ShowSettings());menu.Items.Add("Выход",null,(_,_)=>ExitApp());tray.ContextMenuStrip=menu;tray.DoubleClick+=(_,_)=>ShowSettings();
    if(!e.Args.Contains("--tray"))settingsWindow.Show();Log("Ready");
   } catch(Exception ex) {Log(ex.ToString());MessageBox.Show(ex.Message,"Orbit: ошибка запуска");Shutdown(1);}
@@ -50,6 +55,6 @@ public partial class App : Application
  private void ExitApp() {Exiting=true;wheel?.Finish(true);Shutdown();}
  protected override void OnExit(ExitEventArgs e)
  {
-  Exiting=true;wheel?.Finish(true);Input?.Dispose();if(tray!=null){tray.Visible=false;tray.Dispose();}mutex?.Dispose();base.OnExit(e);
+  Exiting=true;wheel?.Finish(true);Input?.Dispose();if(tray!=null){tray.Visible=false;tray.Dispose();}trayIcon?.Dispose();mutex?.Dispose();base.OnExit(e);
  }
 }

@@ -1,0 +1,16 @@
+<Window x:Class="Orbit.EntryEditor" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" Style="{StaticResource {x:Type Window}}" Title="Orbit" Width="560" Height="480" MinWidth="480" MinHeight="440" WindowStartupLocation="CenterOwner" ShowInTaskbar="False">
+ <Grid Background="{DynamicResource CanvasBrush}" Margin="28"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+  <TextBlock Text="Приложение" FontSize="23" FontWeight="SemiBold" Margin="0,0,0,24"/>
+  <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"><StackPanel>
+   <Label Content="Название" Target="{Binding ElementName=NameBox}" Foreground="{DynamicResource SecondaryBrush}" Padding="0,0,0,6"/>
+   <TextBox x:Name="NameBox" Margin="0,0,0,18" AutomationProperties.Name="Название приложения"/>
+   <Label Content="Файл приложения" Target="{Binding ElementName=PathBox}" Foreground="{DynamicResource SecondaryBrush}" Padding="0,0,0,6"/>
+   <Grid Margin="0,0,0,18"><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><TextBox x:Name="PathBox" AutomationProperties.Name="Путь к приложению"/><Button Grid.Column="1" Content="Обзор" Margin="8,0,0,0" Click="Browse_Click"/></Grid>
+   <Expander x:Name="Advanced" Header="Параметры запуска" Foreground="{DynamicResource SecondaryBrush}" Margin="0,0,0,12"><StackPanel Margin="0,14,0,0">
+    <Label Content="Аргументы" Target="{Binding ElementName=ArgumentsBox}" Foreground="{DynamicResource SecondaryBrush}" Padding="0,0,0,6"/><TextBox x:Name="ArgumentsBox" Margin="0,0,0,16" AutomationProperties.Name="Аргументы запуска"/>
+    <Label Content="Рабочая папка" Target="{Binding ElementName=DirectoryBox}" Foreground="{DynamicResource SecondaryBrush}" Padding="0,0,0,6"/><TextBox x:Name="DirectoryBox" AutomationProperties.Name="Рабочая папка"/>
+   </StackPanel></Expander>
+  </StackPanel></ScrollViewer>
+  <StackPanel Grid.Row="2" Margin="0,16,0,0"><TextBlock x:Name="ValidationMessage" Visibility="Collapsed" Foreground="{DynamicResource DangerBrush}" FontSize="12" Margin="0,0,0,12" AutomationProperties.LiveSetting="Assertive"/><StackPanel Orientation="Horizontal" HorizontalAlignment="Right"><Button Content="Отмена" IsCancel="True" Margin="0,0,8,0"/><Button Content="Сохранить" Style="{StaticResource PrimaryButton}" IsDefault="True" Click="Save_Click"/></StackPanel></StackPanel>
+ </Grid>
+</Window>

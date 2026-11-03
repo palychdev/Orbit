@@ -43,4 +43,5 @@ internal static class Native
  [DllImport("user32.dll")] internal static extern bool ShowWindowAsync(IntPtr h,int command);
  [DllImport("user32.dll")] internal static extern bool SetForegroundWindow(IntPtr h);
  [DllImport("dwmapi.dll")] internal static extern int DwmGetWindowAttribute(IntPtr h,int attribute,out int value,int size);
+ [DllImport("dwmapi.dll")] internal static extern int DwmSetWindowAttribute(IntPtr h,int attribute,ref int value,int size);
 }

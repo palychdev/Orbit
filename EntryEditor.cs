@@ -5,23 +5,32 @@ using System.Windows;
 using System.Windows.Controls;
 
 namespace Orbit;
-internal sealed class EntryEditor : Window
+public partial class EntryEditor : Window
 {
+ private readonly Entry entry;
  public EntryEditor(Entry entry)
  {
-  Style=(Style)FindResource(typeof(Window));
-  Title="Приложение";Width=540;Height=420;ResizeMode=ResizeMode.NoResize;WindowStartupLocation=WindowStartupLocation.CenterOwner;ShowInTaskbar=false;
-  var stack=new StackPanel {Margin=new Thickness(24)};Content=stack;
-  TextBox Field(string label,string value) {stack.Children.Add(new TextBlock {Text=label,Margin=new Thickness(0,0,0,5)});var box=new TextBox {Text=value,Margin=new Thickness(0,0,0,12)};stack.Children.Add(box);return box;}
-  var name=Field("Название",entry.Name);var path=Field("Путь к .exe",entry.Path);var args=Field("Аргументы запуска (необязательно)",entry.Arguments);
-  var buttons=new StackPanel {Orientation=Orientation.Horizontal,Margin=new Thickness(0,10,0,0)};stack.Children.Add(buttons);
-  var save=new Button {Content="Сохранить",IsDefault=true};var cancel=new Button {Content="Отмена",IsCancel=true};buttons.Children.Add(save);buttons.Children.Add(cancel);
-  save.Click+=(_,_)=>{
-   string p=Environment.ExpandEnvironmentVariables(path.Text.Trim().Trim('"'));
-   if(string.IsNullOrWhiteSpace(name.Text) || !File.Exists(p) || !p.EndsWith(".exe",StringComparison.OrdinalIgnoreCase)) {MessageBox.Show(this,"Укажи название и существующий .exe файл.","Проверь данные");return;}
-   entry.Name=name.Text.Trim();entry.Path=System.IO.Path.GetFullPath(p);entry.Arguments=args.Text;DialogResult=true;
-  };
+  this.entry=entry;InitializeComponent();
+  NameBox.Text=entry.Name;PathBox.Text=entry.Path;ArgumentsBox.Text=entry.Arguments;DirectoryBox.Text=entry.WorkingDirectory;
+  SourceInitialized+=(_,_)=>ThemeManager.ApplyTitleBar(this,((App)Application.Current).Config.Theme);
+  Loaded+=(_,_)=>{NameBox.Focus();NameBox.SelectAll();};
  }
+ private void Browse_Click(object sender,RoutedEventArgs e) {
+  var dialog=new Microsoft.Win32.OpenFileDialog {Title="Выбери приложение",Filter="Приложения|*.exe",CheckFileExists=true};
+  if(dialog.ShowDialog(this)==true)PathBox.Text=dialog.FileName;
+ }
+ internal bool TryApply()
+ {
+  string path=Environment.ExpandEnvironmentVariables(PathBox.Text.Trim().Trim('"'));
+  string directory=Environment.ExpandEnvironmentVariables(DirectoryBox.Text.Trim().Trim('"'));
+  if(string.IsNullOrWhiteSpace(NameBox.Text)){Error("Укажи название.",NameBox);return false;}
+  if(!File.Exists(path)||!path.EndsWith(".exe",StringComparison.OrdinalIgnoreCase)){Error("Выбери существующий .exe файл.",PathBox);return false;}
+  if(directory.Length>0&&!Directory.Exists(directory)){Advanced.IsExpanded=true;Error("Рабочая папка не найдена.",DirectoryBox);return false;}
+  entry.Name=NameBox.Text.Trim();entry.Path=System.IO.Path.GetFullPath(path);entry.Arguments=ArgumentsBox.Text;entry.WorkingDirectory=directory;
+  ValidationMessage.Visibility=Visibility.Collapsed;return true;
+ }
+ private void Error(string text,TextBox field) {ValidationMessage.Text=text;ValidationMessage.Visibility=Visibility.Visible;field.Focus();}
+ private void Save_Click(object sender,RoutedEventArgs e) {if(TryApply())DialogResult=true;}
 }
 internal static class Shortcut
 {
