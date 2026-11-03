@@ -18,4 +18,5 @@ foreach ($name in @('LICENSE.txt','ThirdPartyNotices.txt')) { $license=Join-Path
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'README.md') -Destination $Destination -Force
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'docs') -Destination $Destination -Recurse -Force
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'Assets\UIcons\LICENSE') -Destination (Join-Path $Destination 'UIcons-LICENSE.txt') -Force
+Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'Assets\Bootstrap\LICENSE') -Destination (Join-Path $Destination 'Bootstrap-Icons-LICENSE.txt') -Force
 Write-Output "Portable app: $Destination"
