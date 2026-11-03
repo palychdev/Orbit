@@ -24,6 +24,7 @@ internal static class SelfTest
   var png=new PngBitmapEncoder();png.Frames.Add(BitmapFrame.Create(bitmap));using(var output=File.Create(System.IO.Path.Combine(AppContext.BaseDirectory,"wheel-preview.png")))png.Save(output);
   checks+=VisualTests.Run();
   checks+=RegressionTests.Run();
+  checks+=PolishTests.Run();
   File.WriteAllText(System.IO.Path.Combine(AppContext.BaseDirectory,"self-test.txt"),$"PASS: {checks} checks. Sector directions, raw packet decoding, background-input configuration, hotkey sequences, repeated open/close, failure cleanup and recovery, settings roundtrip, WPF render.\nReal Start menu, F11 and game scenarios require interactive verification.");
  }
 }

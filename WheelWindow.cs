@@ -6,12 +6,14 @@ using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Threading;
+using System.Windows.Controls;
 
 namespace Orbit;
 internal sealed class WheelWindow : Window,IWheelHost
 {
  private readonly Settings settings;
  private readonly WheelVisual visual;
+ private readonly FrostedBackdrop backdrop=new();
  private readonly DispatcherTimer timeout=new() {Interval=TimeSpan.FromSeconds(20)};
  private Native.Point saved;
  private Native.Rect savedClip;
@@ -26,7 +28,8 @@ internal sealed class WheelWindow : Window,IWheelHost
   this.attemptActivation=attemptActivation;
   session=new WheelSession(settings,this);
   WindowStyle=WindowStyle.None; ResizeMode=ResizeMode.NoResize; AllowsTransparency=true; Background=Brushes.Transparent; ShowInTaskbar=false; Topmost=true; Cursor=Cursors.None;ShowActivated=false;
-  Content=visual=new WheelVisual(settings);
+  visual=new WheelVisual(settings);var layers=new Grid();layers.Children.Add(backdrop);layers.Children.Add(visual);Content=layers;
+  TextOptions.SetTextRenderingMode(this,TextRenderingMode.Grayscale);TextOptions.SetTextFormattingMode(this,TextFormattingMode.Ideal);
   SourceInitialized+=(_,_)=>{
    handle=new WindowInteropHelper(this).Handle;
    Native.SetWindowLong(handle,-20,Native.GetWindowLong(handle,-20)|0x80);
@@ -58,6 +61,8 @@ internal sealed class WheelWindow : Window,IWheelHost
   var info=new Native.MonitorInfo {Size=Marshal.SizeOf<Native.MonitorInfo>()};
   if(!Native.GetMonitorInfo(Native.MonitorFromPoint(saved,2),ref info))throw new InvalidOperationException("Не удалось определить экран.");
   var r=info.Monitor;
+  Native.SetWindowPos(handle,new IntPtr(-1),r.Left,r.Top,r.Right-r.Left,r.Bottom-r.Top,0x10);
+  double scale=Math.Max(96,Native.GetDpiForWindow(handle))/96.0;backdrop.Capture(r,settings,scale);
   // SetWindowPos receives physical monitor coordinates, unlike WPF's device-independent Left/Top.
   Show();
   if(!Native.SetWindowPos(handle,new IntPtr(-1),r.Left,r.Top,r.Right-r.Left,r.Bottom-r.Top,0x50))throw new InvalidOperationException("Не удалось показать колесо.");
@@ -121,7 +126,7 @@ internal sealed class WheelWindow : Window,IWheelHost
   if(!Native.RegisterRawInputDevices(new[]{remove},1,(uint)Marshal.SizeOf<Native.RawDevice>()))throw new System.ComponentModel.Win32Exception(Marshal.GetLastWin32Error());
   inputOwned=false;
  }
- void IWheelHost.HideOverlay() {if(IsVisible)Hide();}
+ void IWheelHost.HideOverlay() {try{if(IsVisible)Hide();}finally{backdrop.Release();}}
 }
 internal sealed class WheelVisual : FrameworkElement
 {
@@ -130,6 +135,7 @@ internal sealed class WheelVisual : FrameworkElement
  public bool Preview {get;set;}
  private ThemePalette? palette;
  private string? paletteTheme;
+ private Brush? translucentSurface,translucentWheel;
  public WheelVisual(Settings settings) {this.settings=settings;}
  private void Text(DrawingContext dc,string text,Point center,double size,Brush brush,double maxWidth=260)
  {
@@ -138,29 +144,25 @@ internal sealed class WheelVisual : FrameworkElement
  }
  protected override void OnRender(DrawingContext dc)
  {
-  if(palette==null||paletteTheme!=settings.Theme){palette=ThemePalette.For(settings.Theme);paletteTheme=settings.Theme;}
+  if(palette==null||paletteTheme!=settings.Theme){palette=ThemePalette.For(settings.Theme);paletteTheme=settings.Theme;translucentSurface=palette.Surface.Clone();translucentSurface.Opacity=.94;translucentSurface.Freeze();translucentWheel=palette.Wheel.Clone();translucentWheel.Opacity=.89;translucentWheel.Freeze();}
   var p=palette;
   var center=new Point(ActualWidth/2,ActualHeight/2);
   double radius=Math.Min(settings.Size/2,Math.Min(ActualWidth,ActualHeight)*0.43), inner=radius*0.48;
   dc.DrawRectangle(p.Backdrop,null,new Rect(0,0,ActualWidth,ActualHeight));
-  dc.PushOpacity(settings.Opacity);
   int n=settings.Entries.Count;
   for(int i=0;i<n;i++) {
    double angle=i*360.0/n-90, half=180.0/n;
    var geometry=Sector(center,inner,radius,angle-half+0.8,angle+half-0.8);
    bool selected=i==Selected;
-   dc.DrawGeometry(selected?p.WheelSelected:p.Wheel,new Pen(selected?p.Text:p.Stroke,selected?1.5:0.8),geometry);
+   dc.DrawGeometry(selected?p.WheelSelected:translucentWheel,new Pen(selected?p.Text:p.Stroke,selected?1.5:0.8),geometry);
    double rad=angle*Math.PI/180; var position=new Point(center.X+Math.Cos(rad)*radius*0.74,center.Y+Math.Sin(rad)*radius*0.74);
    var entry=settings.Entries[i];
    double iconSize=n>=9?28:34;double iconTop=n>=9?-iconSize/2:-26;
    if(entry.Icon!=null)dc.DrawImage(entry.Icon,new Rect(position.X-iconSize/2,position.Y+iconTop,iconSize,iconSize));
-   else {
-    dc.DrawRoundedRectangle(selected?p.Wheel:p.Elevated,null,new Rect(position.X-iconSize/2,position.Y+iconTop,iconSize,iconSize),7,7);
-    Text(dc,entry.Name.Length>0?entry.Name[..1].ToUpperInvariant():"?",new Point(position.X,position.Y+iconTop+5),17,p.Text,iconSize);
-   }
+   else {dc.PushTransform(new TranslateTransform(position.X-iconSize/2,position.Y+iconTop));dc.PushTransform(new ScaleTransform(iconSize/256,iconSize/256));dc.DrawGeometry(selected?p.WheelSelectedText:p.Text,null,FilledIcon.GeometryFor(IconKind.App));dc.Pop();dc.Pop();}
    if(n<9)Text(dc,entry.Name,new Point(position.X,position.Y+16),12,selected?p.WheelSelectedText:p.Text,Math.Max(60,Math.Min(125,2*Math.PI*radius*.74/n-12)));
   }
-  dc.DrawEllipse(p.Surface,new Pen(p.Stroke,0.8),center,inner-5,inner-5);
+  dc.DrawEllipse(translucentSurface,new Pen(p.Stroke,0.8),center,inner-5,inner-5);
   bool hasSelection=Selected>=0&&Selected<settings.Entries.Count;
   Text(dc,hasSelection?settings.Entries[Selected].Name:settings.BindName,new Point(center.X,center.Y-22),hasSelection?16:23,p.Text,inner*1.65);
   Text(dc,hasSelection?"Отпусти": "Удерживай",new Point(center.X,center.Y+16),12,p.Secondary,inner*1.7);
@@ -168,7 +170,6 @@ internal sealed class WheelVisual : FrameworkElement
    double rad=(Selected*360.0/n-90)*Math.PI/180;
    dc.DrawEllipse(p.Text,null,new Point(center.X+Math.Cos(rad)*(inner-17),center.Y+Math.Sin(rad)*(inner-17)),2.5,2.5);
   }
-  dc.Pop();
   var hint=new Rect(center.X-53,center.Y+radius+20,106,29);dc.DrawRoundedRectangle(p.Surface,new Pen(p.Stroke,0.7),hint,8,8);
   Text(dc,"Esc   Отмена",new Point(center.X,hint.Y+6),11,p.Secondary,100);
  }

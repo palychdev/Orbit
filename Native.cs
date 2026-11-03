@@ -25,6 +25,7 @@ internal static class Native
  [DllImport("user32.dll",SetLastError=true)] internal static extern uint GetRegisteredRawInputDevices([Out] RawDevice[]? devices,ref uint count,uint size);
  [DllImport("user32.dll")] internal static extern IntPtr GetForegroundWindow();
  [DllImport("user32.dll")] internal static extern bool GetWindowRect(IntPtr window,out Rect rect);
+ [DllImport("user32.dll")] internal static extern uint GetDpiForWindow(IntPtr window);
  [DllImport("user32.dll")] internal static extern uint GetRawInputData(IntPtr input,uint command,IntPtr data,ref uint size,uint headerSize);
  [DllImport("user32.dll",SetLastError=true)] internal static extern IntPtr SetWindowsHookEx(int id,HookProc proc,IntPtr module,uint thread);
  [DllImport("user32.dll")] internal static extern bool UnhookWindowsHookEx(IntPtr hook);
