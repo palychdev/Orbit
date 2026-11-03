@@ -8,102 +8,126 @@ using System.Windows.Media;
 using System.Windows.Threading;
 
 namespace Orbit;
-internal sealed class WheelWindow : Window
+internal sealed class WheelWindow : Window,IWheelHost
 {
  private readonly Settings settings;
  private readonly WheelVisual visual;
  private readonly DispatcherTimer timeout=new() {Interval=TimeSpan.FromSeconds(20)};
  private Native.Point saved;
  private Native.Rect savedClip;
- private bool engaged,preview;
- private bool pointerOwned;
- private double x,y;
+ private readonly WheelSession session;
+ private bool pointerOwned,inputOwned;
  private IntPtr handle;
+ private readonly bool attemptActivation;
  public event Action<Entry>? Chosen;
- public WheelWindow(Settings settings)
+ public WheelWindow(Settings settings,bool attemptActivation=true)
  {
   this.settings=settings;
-  WindowStyle=WindowStyle.None; ResizeMode=ResizeMode.NoResize; AllowsTransparency=true; Background=Brushes.Transparent; ShowInTaskbar=false; Topmost=true; Cursor=Cursors.None;
+  this.attemptActivation=attemptActivation;
+  session=new WheelSession(settings,this);
+  WindowStyle=WindowStyle.None; ResizeMode=ResizeMode.NoResize; AllowsTransparency=true; Background=Brushes.Transparent; ShowInTaskbar=false; Topmost=true; Cursor=Cursors.None;ShowActivated=false;
   Content=visual=new WheelVisual(settings);
   SourceInitialized+=(_,_)=>{
    handle=new WindowInteropHelper(this).Handle;
    Native.SetWindowLong(handle,-20,Native.GetWindowLong(handle,-20)|0x80);
    HwndSource.FromHwnd(handle).AddHook(Messages);
   };
-  Deactivated+=(_,_)=>{if(engaged) Finish(true);};
+  // Activation is best-effort, never a prerequisite for raw mouse input. In particular,
+  // do not cancel on Deactivated: Start and fullscreen windows may keep foreground focus.
   PreviewKeyDown+=(_,e)=>{if(e.Key==Key.Escape) {Finish(true); e.Handled=true;}};
   timeout.Tick+=(_,_)=>Finish(true);
-  Closed+=(_,_)=>RestorePointer();
+  Closed+=(_,_)=>Finish(true);
  }
  public void Begin(bool isPreview=false)
  {
-  if(engaged || settings.Entries.Count==0) return;
-  Native.GetCursorPos(out saved); Native.GetClipCursor(out savedClip);
+  if(session.Active)return;
+  visual.Selected=-1;visual.Preview=isPreview;
+  timeout.Interval=TimeSpan.FromSeconds(isPreview?5:20);
+  if(session.Begin(isPreview))timeout.Start();
+ }
+ void IWheelHost.RegisterInput()
+ {
+  new WindowInteropHelper(this).EnsureHandle();
+  var device=RawMouseInput.Device(handle);
+  if(!Native.RegisterRawInputDevices(new[]{device},1,(uint)Marshal.SizeOf<Native.RawDevice>()))throw new System.ComponentModel.Win32Exception(Marshal.GetLastWin32Error());
+  inputOwned=true;
+ }
+ void IWheelHost.ShowOverlay()
+ {
+  if(!Native.GetCursorPos(out saved) || !Native.GetClipCursor(out savedClip))throw new InvalidOperationException("Не удалось сохранить положение курсора.");
   var info=new Native.MonitorInfo {Size=Marshal.SizeOf<Native.MonitorInfo>()};
-  Native.GetMonitorInfo(Native.MonitorFromPoint(saved,2),ref info);
+  if(!Native.GetMonitorInfo(Native.MonitorFromPoint(saved,2),ref info))throw new InvalidOperationException("Не удалось определить экран.");
   var r=info.Monitor;
-  preview=isPreview; x=y=0; visual.Selected=-1; visual.Preview=preview;
   // SetWindowPos receives physical monitor coordinates, unlike WPF's device-independent Left/Top.
-  Show(); Native.SetWindowPos(handle,new IntPtr(-1),r.Left,r.Top,r.Right-r.Left,r.Bottom-r.Top,0x40); Activate();
+  Show();
+  if(!Native.SetWindowPos(handle,new IntPtr(-1),r.Left,r.Top,r.Right-r.Left,r.Bottom-r.Top,0x50))throw new InvalidOperationException("Не удалось показать колесо.");
+  if(attemptActivation)Activate(); // Windows may refuse; INPUTSINK still delivers movement.
   visual.InvalidateVisual();
-  var device=new Native.RawDevice {UsagePage=1,Usage=2,Flags=0,Target=handle};
-  if(!Native.RegisterRawInputDevices(new[]{device},1,(uint)Marshal.SizeOf<Native.RawDevice>())) {Hide(); throw new System.ComponentModel.Win32Exception(Marshal.GetLastWin32Error());}
-  engaged=true;
+ }
+ void IWheelHost.CapturePointer()
+ {
+  // Re-read after activation: a fullscreen app may have released its own mouse clip.
+  if(!Native.GetClipCursor(out savedClip))throw new InvalidOperationException("Не удалось сохранить ограничения курсора.");
+  var info=new Native.MonitorInfo {Size=Marshal.SizeOf<Native.MonitorInfo>()};
+  if(!Native.GetMonitorInfo(Native.MonitorFromPoint(saved,2),ref info))throw new InvalidOperationException("Не удалось определить экран.");
+  var r=info.Monitor;
   pointerOwned=true;
   int cx=(r.Left+r.Right)/2, cy=(r.Top+r.Bottom)/2;
-  Native.SetCursorPos(cx,cy);
+  if(!Native.UnclipCursor(IntPtr.Zero) || !Native.SetCursorPos(cx,cy))throw new InvalidOperationException("Не удалось установить курсор в центре экрана.");
   var clip=new Native.Rect {Left=cx,Top=cy,Right=cx+1,Bottom=cy+1};
-  Native.ClipCursor(ref clip);
-  timeout.Interval=TimeSpan.FromSeconds(preview?5:20); timeout.Start();
+  if(!Native.ClipCursor(ref clip))throw new InvalidOperationException("Не удалось ограничить курсор на время выбора.");
  }
  private IntPtr Messages(IntPtr hwnd,int message,IntPtr w,IntPtr l,ref bool handled)
  {
-  if(message==0xFF && engaged) {
+  if(message==RawMouseInput.Message && session.Active) {
    uint size=0, header=(uint)Marshal.SizeOf<Native.RawHeader>();
    Native.GetRawInputData(l,0x10000003,IntPtr.Zero,ref size,header);
    if(size<header+24 || size>4096) return IntPtr.Zero;
    IntPtr data=Marshal.AllocHGlobal((int)size);
    try {
     if(Native.GetRawInputData(l,0x10000003,data,ref size,header)!=size) return IntPtr.Zero;
-    if(Marshal.PtrToStructure<Native.RawHeader>(data).Type!=0) return IntPtr.Zero;
-    var mouse=Marshal.PtrToStructure<Native.RawMouse>(data+(int)header);
-    if((mouse.Flags&1)==0) Move(mouse.X,mouse.Y);
+    ProcessRawPacket(data,size);
    } finally {Marshal.FreeHGlobal(data);}
   }
   return IntPtr.Zero;
  }
+ internal void ProcessRawPacket(IntPtr data,uint size)
+ {
+  if(RawMouseInput.Decode(data,size,out int dx,out int dy))Move(dx,dy);
+ }
+ internal int Selected=>session.Selected;
  internal void Move(int dx,int dy)
  {
-  x+=dx*settings.Sensitivity; y+=dy*settings.Sensitivity;
-  // Bound the virtual offset: returning toward the center remains easy after a large motion.
-  double distance=Math.Sqrt(x*x+y*y), limit=settings.Size*0.42;
-  if(distance>limit) {x*=limit/distance; y*=limit/distance;}
-  visual.Selected=Selection.Index(x,y,settings.Entries.Count);
-  visual.Offset=new Point(x,y); visual.InvalidateVisual();
+  session.Move(dx,dy);visual.Selected=session.Selected;visual.InvalidateVisual();
  }
  public void Finish(bool cancel)
  {
-  if(!engaged) return;
-  int selected=visual.Selected; bool wasPreview=preview;
-  engaged=false; timeout.Stop();
-  RestorePointer(); Hide();
-  if(!cancel && !wasPreview && selected>=0 && selected<settings.Entries.Count) Chosen?.Invoke(settings.Entries[selected]);
+  timeout.Stop();var entry=session.Finish(cancel);visual.Selected=-1;
+  if(entry!=null)Chosen?.Invoke(entry);
  }
- private void RestorePointer()
+ void IWheelHost.ReleasePointer()
  {
   if(!pointerOwned) return;
   pointerOwned=false;
-  var remove=new Native.RawDevice {UsagePage=1,Usage=2,Flags=1,Target=IntPtr.Zero};
-  Native.RegisterRawInputDevices(new[]{remove},1,(uint)Marshal.SizeOf<Native.RawDevice>());
-  Native.UnclipCursor(IntPtr.Zero); Native.SetCursorPos(saved.X,saved.Y); Native.ClipCursor(ref savedClip);
+  bool released=Native.UnclipCursor(IntPtr.Zero);
+  bool restored=Native.SetCursorPos(saved.X,saved.Y);
+  bool clipped=Native.ClipCursor(ref savedClip);
+  if(!released || !restored || !clipped)throw new InvalidOperationException("Не удалось восстановить курсор.");
  }
+ void IWheelHost.UnregisterInput()
+ {
+  if(!inputOwned)return;
+  var remove=new Native.RawDevice {UsagePage=1,Usage=2,Flags=RawMouseInput.Remove,Target=IntPtr.Zero};
+  if(!Native.RegisterRawInputDevices(new[]{remove},1,(uint)Marshal.SizeOf<Native.RawDevice>()))throw new System.ComponentModel.Win32Exception(Marshal.GetLastWin32Error());
+  inputOwned=false;
+ }
+ void IWheelHost.HideOverlay() {if(IsVisible)Hide();}
 }
 internal sealed class WheelVisual : FrameworkElement
 {
  private readonly Settings settings;
  public int Selected {get;set;}=-1;
  public bool Preview {get;set;}
- public Point Offset {get;set;}
  public WheelVisual(Settings settings) {this.settings=settings;}
  private static Brush Brush(string value) => (Brush)new BrushConverter().ConvertFromString(value)!;
  private void Text(DrawingContext dc,string text,Point center,double size,Brush brush,double maxWidth=260)
