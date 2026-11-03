@@ -10,7 +10,7 @@ public partial class EntryEditor : Window
  private readonly Entry entry;
  public EntryEditor(Entry entry)
  {
-  this.entry=entry;InitializeComponent();
+  this.entry=entry;InitializeComponent();DialogChrome.Attach(this);
   NameBox.Text=entry.Name;PathBox.Text=entry.Path;ArgumentsBox.Text=entry.Arguments;DirectoryBox.Text=entry.WorkingDirectory;
   SourceInitialized+=(_,_)=>ThemeManager.ApplyTitleBar(this,((App)Application.Current).Config.Theme);
   Loaded+=(_,_)=>{NameBox.Focus();NameBox.SelectAll();};

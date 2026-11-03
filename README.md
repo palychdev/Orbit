@@ -1,4 +1,4 @@
-# Orbit 0.3.0
+# Orbit 0.3.1
 
 Радиальное меню приложений для Windows 10/11 x64. C# / WPF / .NET 10.
 
@@ -57,6 +57,6 @@ dotnet build Orbit.csproj -c Release
 
 Результаты: [docs/testing-v0.3.0.md](docs/testing-v0.3.0.md). Предыдущие проверки: [v0.2.0](docs/testing-v0.2.0.md), [v0.1.1](docs/testing-v0.1.1.md).
 
-Иконки интерфейса: [UIcons by Flaticon / Freepik](https://www.flaticon.com/uicons), solid rounded, пакет 3.3.1. Лицензия включена в `Assets/UIcons/LICENSE` и переносимую сборку. Значки приложений извлекаются из Windows, а не перерисовываются.
+Иконки интерфейса: [UIcons by Flaticon / Freepik](https://www.flaticon.com/uicons), solid rounded, пакет 3.3.1. Значки солнца и луны — [Bootstrap Icons 1.13.1](https://github.com/twbs/icons), MIT. Лицензии включены в исходники и переносимую сборку. Значки приложений извлекаются из Windows, а не перерисовываются.
 
 Дизайн и переиспользуемый навык: [DESIGN.md](https://github.com/palychdev/Orbit/blob/main/DESIGN.md), [product-ui-craft](https://github.com/palychdev/Orbit/blob/main/skills/product-ui-craft/SKILL.md). Личная установка навыка в Codex использует папку `~/.codex/skills/product-ui-craft`; исходник в репозитории позволяет переносить и развивать его отдельно от приложения.

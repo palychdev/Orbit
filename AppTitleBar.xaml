@@ -4,7 +4,7 @@
    <Button Background="Transparent" Padding="0" MinHeight="28" Click="About_Click" shell:WindowChrome.IsHitTestVisibleInChrome="True" ToolTip="Об Orbit" AutomationProperties.Name="Об Orbit"><StackPanel Orientation="Horizontal"><local:FilledIcon Kind="Aperture" Width="18" Height="18" Margin="0,0,9,0"/><TextBlock x:Name="Caption" Text="Orbit" FontSize="14" FontWeight="SemiBold" VerticalAlignment="Center"/></StackPanel></Button>
   </StackPanel>
   <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,8,0" shell:WindowChrome.IsHitTestVisibleInChrome="True">
-   <Button x:Name="ThemeButton" Style="{StaticResource IconButton}" Width="32" Height="32" Margin="0,0,8,0" Click="Theme_Click" AutomationProperties.Name="Светлая тема" ToolTip="Светлая тема"><local:FilledIcon x:Name="ThemeGlyph" Kind="Sun" Width="17" Height="17"/></Button>
+   <Button x:Name="ThemeButton" Style="{StaticResource IconButton}" Width="32" Height="32" Padding="6" Margin="0,0,8,0" Click="Theme_Click" AutomationProperties.Name="Светлая тема" ToolTip="Светлая тема"><local:FilledIcon x:Name="ThemeGlyph" Kind="Sun" Width="16" Height="16"/></Button>
    <Button x:Name="MinimizeButton" Style="{StaticResource IconButton}" Width="36" Height="32" Click="Minimize_Click" ToolTip="Свернуть" AutomationProperties.Name="Свернуть"><local:FilledIcon Kind="Minimize" Width="12" Height="12"/></Button>
    <Button Style="{StaticResource IconButton}" Width="36" Height="32" Click="Close_Click" ToolTip="Закрыть" AutomationProperties.Name="Закрыть"><local:FilledIcon Kind="Close" Width="11" Height="11"/></Button>
   </StackPanel>
